@@ -55,10 +55,7 @@ function getWebviewContent() {
                     button {
                         background: var(--vscode-button-background);
                         color: var(--vscode-button-foreground);
-                        border: none;
-                        padding: 4px 12px;
                         cursor: pointer;
-                        margin-top: 10px;
                     }
                     button:hover {
                         background: var(--vscode-button-hoverBackground);
