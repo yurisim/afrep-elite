@@ -17,12 +17,12 @@ export function activate(context: vscode.ExtensionContext) {
                 switch (message.command) {
                     case 'generateStrings':
                         const strings = message.data.map((item: any) => {
-                            return `${item.component} should have between ${item.rangeStart} and ${item.rangeEnd} ohms`;
+                            return `${item.component} should have between ${item.rangeStart}${item.unit1} and ${item.rangeEnd}${item.unit2}`;
                         });
                         // Send the generated text back to webview
-                        panel.webview.postMessage({ 
-                            command: 'showResult', 
-                            text: strings.join('\n') 
+                        panel.webview.postMessage({
+                            command: 'showResult',
+                            text: strings.join('\n')
                         });
                         break;
                 }
@@ -38,57 +38,114 @@ export function activate(context: vscode.ExtensionContext) {
 function getWebviewContent() {
     return `<!DOCTYPE html>
         <html>
+            <head>
+                <style>
+                    body {
+                        padding: 10px;
+                        color: var(--vscode-foreground);
+                        font-family: var(--vscode-font-family);
+                    }
+                    select, input {
+                        background: var(--vscode-input-background);
+                        color: var(--vscode-input-foreground);
+                        border: 1px solid var(--vscode-input-border);
+                        padding: 4px 8px;
+                        margin: 2px;
+                    }
+                    button {
+                        background: var(--vscode-button-background);
+                        color: var(--vscode-button-foreground);
+                        border: none;
+                        padding: 4px 12px;
+                        cursor: pointer;
+                        margin-top: 10px;
+                    }
+                    button:hover {
+                        background: var(--vscode-button-hoverBackground);
+                    }
+                    textarea {
+                        background: var(--vscode-input-background);
+                        color: var(--vscode-input-foreground);
+                        border: 1px solid var(--vscode-input-border);
+                        padding: 8px;
+                        width: 100%;
+                        max-width: 100%;
+                        box-sizing: border-box;
+                    }
+                    .component-row {
+                        display: flex;
+                        align-items: center;
+                        margin: 10px 0;
+                    }
+                    .remove-btn {
+                        background: var(--vscode-errorForeground);
+                        margin-left: 8px;
+                    }
+                </style>
+            </head>
             <body>
-                <div style="display: flex; flex-direction: column; gap: 20px;">
+                <div class="component-container">
                     <div>
-                        <select id="numStrings" onchange="updateForms()">
-                            <option value="1">1 String</option>
-                            <option value="2">2 Strings</option>
-                            <option value="3">3 Strings</option>
-                        </select>
+                        <button onclick="addComponent()">Add Component</button>
                         <div id="formsContainer"></div>
                         <button onclick="generateStrings()">Generate</button>
                     </div>
                     
-                    <div>
-                        <h3>Generated Text:</h3>
-                        <textarea id="result" rows="10" style="width: 100%; margin-top: 10px;" readonly></textarea>
+                    <div style="margin-top: 20px;">
+                        <h3 style="color: var(--vscode-foreground);">Generated Text:</h3>
+                        <textarea id="result" rows="10" style="width: 100%;" readonly></textarea>
                     </div>
                 </div>
 
                 <script>
                     const vscode = acquireVsCodeApi();
-                    const components = ['Resistor A', 'Resistor B', 'Capacitor A'];
-                    
-                    function updateForms() {
-                        const count = parseInt(document.getElementById('numStrings').value);
+                    const components = ['Connection A', 'Connection B', 'Connection C'];
+                    let componentCount = 0;
+
+                    function addComponent() {
                         const container = document.getElementById('formsContainer');
-                        container.innerHTML = '';
-                        
-                        for (let i = 0; i < count; i++) {
-                            const form = document.createElement('div');
-                            form.innerHTML = \`
-                                <div style="margin: 10px 0;">
-                                    <select id="component_\${i}">
-                                        \${components.map(c => \`<option value="\${c}">\${c}</option>\`).join('')}
-                                    </select>
-                                    <input type="number" id="range1_\${i}" min="1" max="10" value="1" />
-                                    <input type="number" id="range2_\${i}" min="1" max="10" value="10" />
-                                </div>
-                            \`;
-                            container.appendChild(form);
-                        }
+                        const form = document.createElement('div');
+                        form.className = 'component-row';
+                        form.id = \`row_\${componentCount}\`;
+                        form.innerHTML = \`
+                            <select id="component_\${componentCount}" class="vscode-select">
+                                \${components.map(c => \`<option value="\${c}">\${c}</option>\`).join('')}
+                            </select>
+                            <input type="number" id="range1_\${componentCount}" min="1" max="10" value="1" class="vscode-input" />
+                            <select id="unit1_\${componentCount}" class="vscode-select">
+                                <option value="ohm">ohm</option>
+                                <option value="kohm">kohm</option>
+                                <option value="Mohm">Mohm</option>
+                            </select>
+                            <input type="number" id="range2_\${componentCount}" min="1" max="10" value="10" class="vscode-input" />
+                            <select id="unit2_\${componentCount}" class="vscode-select">
+                                <option value="ohm">ohm</option>
+                                <option value="kohm">kohm</option>
+                                <option value="Mohm">Mohm</option>
+                            </select>
+                            <button onclick="removeComponent(\${componentCount})" class="remove-btn">Remove</button>
+                        \`;
+                        container.appendChild(form);
+                        componentCount++;
+                    }
+
+                    function removeComponent(id) {
+                        const element = document.getElementById(\`row_\${id}\`);
+                        if (element) element.remove();
                     }
 
                     function generateStrings() {
-                        const count = parseInt(document.getElementById('numStrings').value);
                         const data = [];
+                        const forms = document.getElementById('formsContainer').children;
                         
-                        for (let i = 0; i < count; i++) {
+                        for (const form of forms) {
+                            const id = form.id.split('_')[1];
                             data.push({
-                                component: document.getElementById(\`component_\${i}\`).value,
-                                rangeStart: document.getElementById(\`range1_\${i}\`).value,
-                                rangeEnd: document.getElementById(\`range2_\${i}\`).value
+                                component: document.getElementById(\`component_\${id}\`).value,
+                                rangeStart: document.getElementById(\`range1_\${id}\`).value,
+                                rangeEnd: document.getElementById(\`range2_\${id}\`).value,
+                                unit1: document.getElementById(\`unit1_\${id}\`).value,
+                                unit2: document.getElementById(\`unit2_\${id}\`).value
                             });
                         }
 
@@ -100,7 +157,6 @@ function getWebviewContent() {
 
                     window.addEventListener('message', event => {
                         const message = event.data;
-                        console.log('Received message:', message);  // Debug log
                         switch (message.command) {
                             case 'showResult':
                                 document.getElementById('result').value = message.text;
@@ -108,10 +164,11 @@ function getWebviewContent() {
                         }
                     });
 
-                    updateForms();
+                    // Add initial component
+                    addComponent();
                 </script>
             </body>
         </html>`;
 }
 
-export function deactivate() {}
+export function deactivate() { }
