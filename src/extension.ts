@@ -1,38 +1,54 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
 
-export function activate(context: vscode.ExtensionContext) {
-    const disposable = vscode.commands.registerCommand('afrep-elite.generate', () => {
-        const panel = vscode.window.createWebviewPanel(
-            'eliteTestGenerator',
-            'Elite Test Generator',
-            vscode.ViewColumn.One,
-            { enableScripts: true }
-        );
+class EliteGeneratorViewProvider implements vscode.WebviewViewProvider {
+    public static readonly viewType = 'elite-generator-view';
+    private _view?: vscode.WebviewView;
 
-        panel.webview.html = getWebviewContent();
+    constructor(
+        private readonly _extensionUri: vscode.Uri,
+    ) { }
 
-        panel.webview.onDidReceiveMessage(
+    resolveWebviewView(
+        webviewView: vscode.WebviewView,
+        context: vscode.WebviewViewResolveContext,
+        _token: vscode.CancellationToken,
+    ) {
+        this._view = webviewView;
+        webviewView.webview.options = {
+            enableScripts: true,
+        };
+        webviewView.webview.html = this._getWebviewContent(webviewView.webview);
+
+        webviewView.webview.onDidReceiveMessage(
             message => {
                 switch (message.command) {
                     case 'generate':
                         const strings = message.data.map((item: any) => {
                             return `${item.component} should have between ${item.rangeStart}${item.unit1} and ${item.rangeEnd}${item.unit2}`;
                         });
-                        // Send the generated text back to webview
-                        panel.webview.postMessage({
+                        webviewView.webview.postMessage({
                             command: 'showResult',
                             text: strings.join('\n')
                         });
                         break;
                 }
-            },
-            undefined,
-            context.subscriptions
+            }
         );
-    });
+    }
 
-    context.subscriptions.push(disposable);
+    private _getWebviewContent(webview: vscode.Webview) {
+        // Use your existing getWebviewContent function here
+        return getWebviewContent();
+    }
+}
+
+export function activate(context: vscode.ExtensionContext) {
+    const provider = new EliteGeneratorViewProvider(context.extensionUri);
+    
+    context.subscriptions.push(
+        vscode.window.registerWebviewViewProvider(EliteGeneratorViewProvider.viewType, provider)
+    );
 }
 
 function getWebviewContent() {

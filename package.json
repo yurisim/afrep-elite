@@ -17,7 +17,25 @@
         "command": "afrep-elite.generate",
         "title": "Generate ELITE Files"
       }
-    ]
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "elite-generator",
+          "title": "ELITE Generator",
+          "icon": "media/icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "elite-generator": [
+        {
+          "id": "elite-generator-view",
+          "name": "Generator",
+          "type": "webview"
+        }
+      ]
+    }
   },
   "scripts": {
     "vscode:prepublish": "npm run package",
