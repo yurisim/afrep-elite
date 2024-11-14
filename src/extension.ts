@@ -2,10 +2,10 @@ import * as vscode from 'vscode';
 import * as path from 'path';
 
 export function activate(context: vscode.ExtensionContext) {
-    const disposable = vscode.commands.registerCommand('afrep-elite.generateStrings', () => {
+    const disposable = vscode.commands.registerCommand('afrep-elite.generate', () => {
         const panel = vscode.window.createWebviewPanel(
-            'stringGenerator',
-            'String Generator',
+            'eliteTestGenerator',
+            'Elite Test Generator',
             vscode.ViewColumn.One,
             { enableScripts: true }
         );
@@ -15,7 +15,7 @@ export function activate(context: vscode.ExtensionContext) {
         panel.webview.onDidReceiveMessage(
             message => {
                 switch (message.command) {
-                    case 'generateStrings':
+                    case 'generate':
                         const strings = message.data.map((item: any) => {
                             return `${item.component} should have between ${item.rangeStart}${item.unit1} and ${item.rangeEnd}${item.unit2}`;
                         });
@@ -85,7 +85,7 @@ function getWebviewContent() {
                     <div>
                         <button onclick="addComponent()">Add Component</button>
                         <div id="formsContainer"></div>
-                        <button onclick="generateStrings()">Generate</button>
+                        <button onclick="generate()">Generate</button>
                     </div>
                     
                     <div style="margin-top: 20px;">
@@ -131,7 +131,7 @@ function getWebviewContent() {
                         if (element) element.remove();
                     }
 
-                    function generateStrings() {
+                    function generate() {
                         const data = [];
                         const forms = document.getElementById('formsContainer').children;
                         
@@ -147,7 +147,7 @@ function getWebviewContent() {
                         }
 
                         vscode.postMessage({
-                            command: 'generateStrings',
+                            command: 'generate',
                             data: data
                         });
                     }

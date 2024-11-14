@@ -14,12 +14,8 @@
   "contributes": {
     "commands": [
       {
-        "command": "afrep-elite.helloWorld",
-        "title": "Hello World"
-      },
-      {
-        "command": "afrep-elite.generateStrings",
-        "title": "Generate Ohm Strings"
+        "command": "afrep-elite.generate",
+        "title": "Generate ELITE Files"
       }
     ]
   },
