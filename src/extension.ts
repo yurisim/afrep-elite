@@ -24,13 +24,40 @@ class EliteGeneratorViewProvider implements vscode.WebviewViewProvider {
             message => {
                 switch (message.command) {
                     case 'generate':
+                        const initLines = [
+                            'DRP,ALL',
+                            'UNBLOCK,ALL',
+                            'ENB,BOF',
+                            'ENB,PAT',
+                            '',
+                            '; Assume file name to be to same',
+                            'ID,RESISTORTEST.id',
+                            'SEL,RESISTORTEST.ER',
+                            ''
+                        ].join('\n');
+
                         const strings = message.data.map((item: any) => {
                             return `${item.component} => A,INIT,DCS,${item.stimulus}${item.stimulusUnit},>${item.rangeStart}${item.unit1},<${item.rangeEnd}${item.unit2},0.0T,0.1S`;
                         });
+
+                        const endLines = [
+                            '',
+                            '; TODO OPERATIONS BLOCK',
+                            '; DECIDE BETWEEN `AS;J3 25` OR `AS127` syntax',
+                            '',
+                            'DRP,ALL',
+                            'VPROG,0,VPROG1,N',
+                            'TIM',
+                            'ESR',
+                            'ESD,DSK',
+                            'END'
+                        ].join('\n');
+
                         webviewView.webview.postMessage({
                             command: 'showResult',
-                            text: strings.join('\n')
+                            text: initLines + '\n' + strings.join('\n') + '\n' + endLines
                         });
+                        
                         break;
                 }
             }
